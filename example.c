@@ -5,39 +5,28 @@
 
 void* heavy_work(void* arg) {
     int n = *(int*)arg;
-    printf("[worker] Received input: %d\n", n);
-    sleep(2);
-    int* result = malloc(sizeof(int));
-    *result = n * 42;
-    return result;
+    printf("[worker] got input: %d\n", n);
+    sleep(4);
+    int* res = malloc(sizeof(int));
+    *res = n * 42;
+    return res;
+}
+
+void on_done(void* ctx, void* result) {
+    int value = *(int*)result;
+    printf("[callback] Result = %d\n", value);
 }
 
 int main() {
-    async_init(2);  // worker threads
+    async_init(3);
 
-    int a = 5, b = 10, c = 15;
+    int a = 5, b = 10, c = 15, d = 20;
+    async_submit_with_callback(heavy_work, &a, sizeof(a), on_done, NULL);
+    async_submit_with_callback(heavy_work, &b, sizeof(b), on_done, NULL);
+    async_submit_with_callback(heavy_work, &c, sizeof(c), on_done, NULL);
+    async_submit_with_callback(heavy_work, &d, sizeof(d), on_done, NULL);
 
-    async_job_t* job1 = async_submit(heavy_work, &a);
-    async_job_t* job2 = async_submit(heavy_work, &b);
-    async_job_t* job3 = async_submit(heavy_work, &c);
-
-    for (int tick = 0; tick < 10; ++tick) {
-        printf("Tick %d:\n", tick);
-
-        const char* msg1 = async_poll(job1);
-        const char* msg2 = async_poll(job2);
-        const char* msg3 = async_poll(job3);
-
-        if (msg1) printf("  job1: %s\n", msg1);
-        if (msg2) printf("  job2: %s\n", msg2);
-        if (msg3) printf("  job3: %s\n", msg3);
-
-        sleep(1);
-    }
-
-    async_destroy(job1);
-    async_destroy(job2);
-    async_destroy(job3);
-
+    async_run();
+    async_shutdown();
     return 0;
 }
