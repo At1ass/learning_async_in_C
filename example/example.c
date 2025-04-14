@@ -18,11 +18,13 @@ void on_done(void* ctx, void* result) {
     free(result);
 }
 
+#define NUM_FUTURES 50
+
 int main() {
     async_init();
 
-    future_t* futures[20];
-    for (int i = 0; i < 20; ++i) {
+    future_t* futures[NUM_FUTURES];
+    for (int i = 0; i < NUM_FUTURES; ++i) {
         futures[i] = async_submit(compute, &i, sizeof(i));
         future_then(futures[i], on_done, NULL);
     }
@@ -30,7 +32,7 @@ int main() {
     async_run();      // ждём все коллбэки
     async_shutdown(); // завершить воркеры
 
-    for (int i = 0; i < 20; ++i) {
+    for (int i = 0; i < NUM_FUTURES; ++i) {
         future_destroy(futures[i]);
     }
 
